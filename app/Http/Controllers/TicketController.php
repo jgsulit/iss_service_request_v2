@@ -21,6 +21,8 @@ use App\Model\SystemOnePhoneDirectory;
 use DataTables;
 use Carbon\Carbon;
 use Mail;
+use App\Exports\TicketExport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class TicketController extends Controller
 {
@@ -238,7 +240,10 @@ class TicketController extends Controller
 
                             if($row->second_assignee != null) {
                                 $assignee = $row->second_assignee;
-                                $assignee_name = $row->second_assignee_info->name;
+
+                                if($row->second_assignee_info != null) {
+                                    $assignee_name = $row->second_assignee_info->name;
+                                }
                             }
 
                             // if(Carbon::now()->format('Y-m-d H:i:s') <= $row->due_date) {
@@ -349,7 +354,11 @@ class TicketController extends Controller
 	               	return $result;
 	            })
                 ->addColumn('raw_requestor', function($row){
-	                $result = $row->requestor_info->name . '<br>';
+                    $result = '';
+
+                    if($row->requestor_info != null) {
+                        $result = $row->requestor_info->name . '<br>';
+                    }
 
                     if($row->second_assignee_info != null) {
 	                	// $result .= $row->second_assignee_info->name . '<br>';
@@ -1384,16 +1393,153 @@ class TicketController extends Controller
     }
 
     // 09122024 Added by Nessa
-    public function get_local_no(){
-        $phone_dir = SystemOnePhoneDirectory::where('category', 1)
-        ->where('location', '!=', '')
-        ->where('division_department', '!=', 'BOD')
-        ->where('logdel',0)
+    // public function get_local_no(){
+    //     $phone_dir = SystemOnePhoneDirectory::where('category', 1)
+    //     ->where('location', '!=', '')
+    //     ->where('division_department', '!=', 'BOD')
+    //     ->where('logdel',0)
 
-        // ->where('logdel',0)
-        ->get();
-        // return $phone_dir;
-        return response()->json(['phone_dir' => $phone_dir]);
+    //     // ->where('logdel',0)
+    //     ->get();
+    //     // return $phone_dir;
+    //     return response()->json(['phone_dir' => $phone_dir]);
+    // }
+
+    public function get_local_no(Request $request){
+        session_start();
+        date_default_timezone_set('Asia/Manila');
+
+        if($request->ajax()){
+        	if(isset($_SESSION["rapidx_user_id"])){
+		        $search = $request->search;
+
+		        if($search == ''){
+		            $phone_dirs = [];
+		        }
+		        else{
+		            $phone_dirs = SystemOnePhoneDirectory::where('category', 1)
+                    ->where(function($query) use($search) {
+                        return $query->orWhere('division_department', 'like', '%' . $search . '%')
+                        ->orWhere('phone_number', 'like', '%' . $search . '%')
+                        ->orWhere('assigned_user', 'like', '%' . $search . '%')
+                        ->orWhere('location', 'like', '%' . $search . '%');
+                    })
+                    ->where('location', '!=', '')
+                    ->where('division_department', '!=', 'BOD')
+                    ->where('logdel',0)
+                    ->get();
+		        }
+
+		        $response = array();
+		        $response[] = array(
+	                "id" => '',
+	                "text" => '',
+	            );
+
+		        foreach($phone_dirs as $phone_dir){
+                    $text = "";
+                    if($phone_dir->location == 'Malvar') {
+                        $text = $phone_dir->phone_number . ' ( ' . $phone_dir->location . ' - ' . $phone_dir->assigned_user  . ' ) ';
+                    }
+                    else {
+                        $text = $phone_dir->phone_number . ' ( ' . $phone_dir->assigned_user  . ' ) ';
+                    }
+
+		            $response[] = array(
+		                "id" => $phone_dir->pkid,
+		                "text" => $text,
+		            );
+		        }
+
+		        echo json_encode($response);
+		        exit;
+        	}
+        	else{
+        		$response = array();
+		            $response[] = array(
+		                "id" => '',
+		                "text" => 'Please reload again.',
+		            );
+
+		        echo json_encode($response);
+        	}
+        }
+    	else{
+    		abort(403);
+    	}
+    }
+
+    public function export_report(Request $request){
+        // $currentYear = Carbon::now()->year;
+
+        // $tickets = Ticket::select(
+        //     'trt',
+        //     DB::raw('MONTH(created_at) as month'),
+        //     DB::raw('COUNT(CASE WHEN confirmed_at IS NOT NULL AND confirmed_at <= due_date THEN 1 END) as hit_count'),
+        //     DB::raw('COUNT(CASE WHEN confirmed_at IS NULL OR confirmed_at > due_date THEN 1 END) as missed_count')
+        // )
+        // ->whereYear('created_at', $currentYear) // Filter for the current year
+        // ->groupBy('trt', DB::raw('MONTH(created_at)')) // Group by 'trt' and month
+        // ->orderBy('month') // Sort by month
+        // ->get();
+
+        // // return response()->json([
+        // //     'tickets' => $tickets
+        // // ]);
+
+        // // Transform the data into a more usable format for the Blade view
+        // $monthlyData = [];
+        // foreach ($tickets as $ticket) {
+        //     $trtIndex = $ticket->trt ?? ''; // Mapping null TRT to 'Rx'
+        //     $month = $ticket->month;
+
+        //     if (!isset($monthlyData[$trtIndex])) {
+        //         $monthlyData[$trtIndex] = [];
+        //     }
+
+        //     $monthlyData[$trtIndex][$month] = [
+        //         'hit' => $ticket->hit_count,
+        //         'miss' => $ticket->missed_count
+        //     ];
+        // }
+
+        // // TRT mapping
+        // $arr_trt = [
+        //     '0.4' => 'E4',
+        //     1 => 'R1',
+        //     2 => 'R2',
+        //     3 => 'R3',
+        //     4 => 'R4',
+        //     5 => 'R5',
+        //     '-1' => 'RX',
+        // ];
+
+        // // Prepare months array
+        // $months = [
+        //     1 => 'January', 2 => 'February', 3 => 'March', 4 => 'April',
+        //     5 => 'May', 6 => 'June', 7 => 'July', 8 => 'August',
+        //     9 => 'September', 10 => 'October', 11 => 'November', 12 => 'December'
+        // ];
+
+        // return view('exports.kpi_trt', compact('arr_trt', 'months', 'monthlyData'));
+
+        return Excel::download(new TicketExport, 'ISS Service Request KPI.xlsx');
+        // $tickets = Ticket::where('logdel', 0)
+		// 				->with([
+		// 					'requestor_info',
+        //                     'assignee_info',
+        //                     'second_assignee_info',
+        //                     'service_type_info',
+        //                     'department_info'
+        //                 ])
+        //         ->where('logdel', 0)
+        //         ->get();
+
+        // // return response()->json([
+        // //     'tickets' => $tickets
+        // // ]);
+
+        // return view('exports.raw', compact('tickets'));
     }
 }
 

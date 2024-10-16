@@ -90,6 +90,7 @@ Route::post('/comment_ticket', 'TicketController@comment_ticket')->name('comment
 Route::get('/view_open_tickets', 'TicketController@view_open_tickets')->name('view_open_tickets');
 Route::get('/view_in_progress_tickets', 'TicketController@view_in_progress_tickets')->name('view_in_progress_tickets');
 Route::get('/get_local_no', 'TicketController@get_local_no')->name('get_local_no');
+Route::get('/export_report', 'TicketController@export_report')->name('export_report');
 
 // HOLIDAY CONTROLLER
 Route::get('/view_holidays', 'HolidayController@view_holidays')->name('view_holidays');

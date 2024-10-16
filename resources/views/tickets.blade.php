@@ -217,6 +217,13 @@
                         <textarea class="form-control" name="comment" placeholder="Enter your comment here..." required></textarea>
                     </div>
                 </div>
+                <div class="form-group row">
+                <label class="col-sm-2 col-form-label">Attachment</label>
+                <div class="col-sm-10">
+                    <input type="file" class="form-control" name="attachments" placeholder="Attachment">
+                    <span class="text-danger float-sm-right input-error"></span>
+                </div>
+                </div>
                 <button type="submit" class="btn btn-sm btn-primary btnCommentTicket">Send</button>
             </form>
           </div>

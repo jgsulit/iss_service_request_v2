@@ -4,6 +4,7 @@ namespace App\Model;
 
 use Illuminate\Database\Eloquent\Model;
 use App\Model\RapidXUser;
+use App\Model\RapidXDepartment;
 use App\Model\ServiceType;
 
 class Ticket extends Model
@@ -24,5 +25,9 @@ class Ticket extends Model
 
     public function service_type_info() {
         return $this->hasOne(ServiceType::class, 'id', 'service_type_id');
+    }
+
+    public function department_info() {
+        return $this->hasOne(RapidXDepartment::class, 'department_id', 'department_id');
     }
 }
