@@ -153,14 +153,10 @@
               </div>
             </div>
 
-            {{-- Added by Nessa 08312024 --}}
             <div class="form-group row">
               <label class="col-sm-2 col-form-label">Local Number</label>
               <div class="col-sm-6">
-                {{-- Added by Nessa 09122024 --}}
-                <select class="form-control select2bs4 selectLocalNo" id="txtLocalnumberID" name="local_no"></select>
-                {{-- <input type="text" class="form-control" name="local_no" placeholder="Local Number"> --}}
-                {{-- <span class="text-danger float-sm-right input-error"></span> --}}
+                <select class="form-control select2bs4 selectLocalNo" name="local_no"></select>
               </div>
             </div>
 
@@ -284,7 +280,7 @@
 <script type="text/javascript">
   $(document).ready(function () {
     // Added by Nessa 09122024
-     GetLocalNo($(".selectLocalNo"));
+    //  GetLocalNo($(".selectLocalNo"));
 
     frmSaveTicket = $("#frmSaveTicket");
     btnSaveTicket = $('.btnSaveTicket');
@@ -384,6 +380,30 @@
         allowClear: true,
         ajax: {
            url: "{{ route('get_cbo_rx_user_emails') }}",
+           type: "get",
+           dataType: 'json',
+           delay: 250,
+           // quietMillis: 100,
+           data: function (params) {
+            return {
+              search: params.term, // search term
+            };
+           },
+           processResults: function (response) {
+             return {
+                results: response
+             };
+           },
+           cache: true
+        },
+    });
+
+    $('.selectLocalNo').select2({
+        placeholder: "",
+        minimumInputLength: 2,
+        allowClear: true,
+        ajax: {
+           url: "{{ route('get_local_no') }}",
            type: "get",
            dataType: 'json',
            delay: 250,
