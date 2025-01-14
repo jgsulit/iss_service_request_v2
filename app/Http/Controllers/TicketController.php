@@ -27,29 +27,25 @@ use Maatwebsite\Excel\Facades\Excel;
 class TicketController extends Controller
 {
 	public function get_str_trt($trt) {
-        if($trt != "") {
-
-            // commented by Nessa 09102024
-            // if($trt < 1) {
-            //     return 'E4';
-            // }
-            // else {
-                $arr_trt = [
-                    "-1" => 'RX',
-                    "0.4" => 'E4',
-                    1 => 'R1',
-                    2 => 'R2',
-                    3 => 'R3',
-                    4 => 'R4',
-                    5 => 'R5',
-                ];
-
-                return $arr_trt[$trt];
-            // }
-        }
-		else {
+         // return gettype($trt);
+        if(!isset($trt) || $trt == NULL) {
             return "N/A";
         }
+        // else{
+        //     return "false $trt";
+        // }
+
+        $arr_trt = [
+            "-1" => 'RX',
+            "0.4" => 'E4',
+            1 => 'R1',
+            2 => 'R2',
+            3 => 'R3',
+            4 => 'R4',
+            5 => 'R5',
+        ];
+
+        return $arr_trt[(string)$trt];
 	}
 
     public function view_open_tickets(Request $request){
@@ -210,7 +206,7 @@ class TicketController extends Controller
 	                    $result .= '<span class="badge badge-pill bg-purple">For Verification - ' . $trt . '</span>';
 	                }
 	                else if($row->status == 4){
-	                    $result .= '<span class="badge badge-pill bg-success">Confirmed - ' . $trt . '</span>';
+	                    $result .= '<span class="badge badge-pill bg-success">Closed - ' . $trt . '</span>';
 	                }
 	                else if($row->status == 5){
 	                    $result .= '<span class="badge badge-pill bg-danger">Cancelled - ' . $trt . '</span>';
@@ -262,6 +258,7 @@ class TicketController extends Controller
 
                         if($admin == 1 || $iss_staff == 1) {
                             $result .= ' <button type="button" class="btn btn-xs btn-success table-btns btnVerifyTicket" ticket-id="' . $row->id . '" title="For verification"><i class="fa fa-check"></i></button>';
+                            $result .= ' <button type="button" class="btn btn-xs btn-danger table-btns btnCancelTicket" action="1" status="5" ticket-id="' . $row->id . '" title="Cancel"><i class="fa fa-lock"></i></button>';
                         }
 	                }
                     else if($row->status == 3){
@@ -280,7 +277,6 @@ class TicketController extends Controller
                         //         }
                         //     }
                         // }
-
 
 	                    // if($admin == 1) {
                         //     $assignee = $row->assignee;
@@ -310,7 +306,7 @@ class TicketController extends Controller
 
                     $result .= ' <button type="button" class="btn btn-xs btn-primary table-btns btnViewTicketLogs" ticket-id="' . $row->id . '" title="View Logs"><i class="fa fa-file"></i></button>';
 
-	                return $result;
+                    return $result;
 	            })
 	            ->addColumn('raw_cc', function($row){
 	                return str_replace(",", "<br>", $row->cc);
@@ -388,7 +384,22 @@ class TicketController extends Controller
 
 	               	return $result;
 	            })
-	            ->rawColumns(['raw_status', 'raw_action', 'raw_cc', 'raw_subject', 'raw_created_at', 'raw_requestor', 'raw_description'])
+                ->addColumn('raw_fac', function($row){
+	                $result = '';
+
+                    if($row->factory == '1') {
+                        $result .= 'Factory 1&2';
+                    }else if($row->factory == '1') {
+                        $result .= 'Factory 3';
+                    }
+                    else{
+                        $result .= '--';
+                    }
+
+	               	return $result;
+	            })
+	            // ->rawColumns(['raw_status', 'raw_action', 'raw_cc', 'raw_subject', 'raw_created_at', 'raw_requestor', 'raw_description'])
+	            ->rawColumns(['raw_status', 'raw_action', 'raw_cc', 'raw_subject', 'raw_created_at', 'raw_requestor', 'raw_description', 'raw_fac'])
 	            ->make(true);
         }
     	else{
@@ -404,10 +415,16 @@ class TicketController extends Controller
                             'second_assignee_info',
                             'service_type_info',
                         ])
-                        ->where('logdel', 0)
-	        			->where('created_by', $_SESSION["rapidx_user_id"])
-	        			->where('status', $request->status)
-        				->get();
+                        // ->where('logdel', 0)
+	        			->where('created_by', $_SESSION["rapidx_user_id"]);
+	        			// ->where('status', $request->status)
+        				// ->get();
+
+            if($request->status == 0){
+                $data = $data->where('logdel', 0)->get();
+            }else{
+                $data = $data->where('status', $request->status)->get();
+            }
 
 	        return DataTables::of($data)
 	            ->addColumn('raw_status', function($row){
@@ -428,7 +445,8 @@ class TicketController extends Controller
 	                    $result .= '<span class="badge badge-pill bg-purple">For Verification - ' . $trt . '</span>';
 	                }
 	                else if($row->status == 4){
-	                    $result .= '<span class="badge badge-pill bg-success">Confirmed - ' . $trt . '</span>';
+	                    // $result .= '<span class="badge badge-pill bg-success">Confirmed - ' . $trt . '</span>';
+	                    $result .= '<span class="badge badge-pill bg-success">Closed - ' . $trt . '</span>';
 	                }
 	                else if($row->status == 5){
 	                    $result .= '<span class="badge badge-pill bg-danger">Cancelled - ' . $trt . '</span>';
@@ -482,14 +500,14 @@ class TicketController extends Controller
 	                }
 
 	                if($row->due_date != null) {
-	                	$result .= Carbon::parse($row->due_date)->toFormattedDateString() . ' ' . Carbon::parse($row->due_date)->format('h:i A') . '<br>';
+	                	$result .= '<span style="color:blue;">' .Carbon::parse($row->due_date)->toFormattedDateString() . ' ' . Carbon::parse($row->due_date)->format('h:i A') . '<br></span>';
 	                }
 	                else{
 	                	$result .= '--';
 	                }
 
 	                if($row->confirmed_at != null) {
-	                	$result .= Carbon::parse($row->confirmed_at)->toFormattedDateString() . ' ' . Carbon::parse($row->confirmed_at)->format('h:i A') . '<br>';
+	                	$result .= '<span style="color:green;">' .Carbon::parse($row->confirmed_at)->toFormattedDateString() . ' ' . Carbon::parse($row->confirmed_at)->format('h:i A') . '<br></span>';
 	                }
 	                else{
 	                	$result .= '--<br>';
@@ -497,7 +515,41 @@ class TicketController extends Controller
 
 	               	return $result;
 	            })
-	            ->rawColumns(['raw_status', 'raw_action', 'raw_cc', 'raw_subject', 'raw_created_at'])
+                ->addColumn('raw_assignee', function($row){
+                    $result = '';
+
+                    if($row->second_assignee_info != null) {
+	                	$result .= '<span style="color:blue;">' . $row->second_assignee_info->name . '</span>';
+	                }
+	                else{
+                        if($row->assignee_info != null) {
+                            $result .= '<span style="color:blue;font-weight:bold">' . $row->assignee_info->name . '</span>';
+                        }
+                        else{
+                            $result .= '--';
+                        }
+	                }
+
+	               	return $result;
+	            })
+                // 01132025 by Nessa
+                // ->addColumn('raw_fac', function($row){
+                //     $result = '';
+
+
+                //     if($row->factory == '1') {
+                //         $result .= 'Factory 1&2';
+                //     }else if($row->factory == '3') {
+                //         $result .= 'Factory 3';
+                //     }
+                //     else{
+                //         $result .= '--';
+                //     }
+
+	            //    	return $result;
+	            // })
+	            // ->rawColumns(['raw_status', 'raw_action', 'raw_cc', 'raw_subject', 'raw_created_at', 'raw_assignee', 'raw_fac']) // 01132025 by Nessa
+	            ->rawColumns(['raw_status', 'raw_action', 'raw_cc', 'raw_subject', 'raw_created_at', 'raw_assignee'])
 	            ->make(true);
         }
     	else{
@@ -543,6 +595,7 @@ class TicketController extends Controller
 		                        'cc' => $cc,
 		                        'subject' => $request->subject,
 		                        'local_no' => $request->local_no, // Added by Nessa 08312024
+		                        'factory' => $request->factory, // Added by Nessa 01132025
 		                        'request' => $request->requests,
 		                        'status' => 1,
 		                        'attachments' => $attachments,
@@ -774,8 +827,13 @@ class TicketController extends Controller
                             }
                             else if($request->status == 4) {
                                 $confirmed_by = RapidXUser::where('id', $_SESSION["rapidx_user_id"])->first()->name;
-                                $log_description = "The ticket has been confirmed by " . $confirmed_by  . " at " . Carbon::now()->toFormattedDateString() . ' ' . Carbon::now()->format('h:i A') . ".";
-								$subject = 'ISS Service Request - Ticket #' . $ticket_data->id . ": CONFIRMED : " . $ticket_data->subject;
+
+                                $log_description = "The ticket has been closed by " . $confirmed_by  . " at " . Carbon::now()->toFormattedDateString() . ' ' . Carbon::now()->format('h:i A') . ".";
+								$subject = 'ISS Service Request - Ticket #' . $ticket_data->id . ": CLOSED : " . $ticket_data->subject;
+//
+                                /* Closed by the system */
+                                // $log_description = "Since we haven't received a response or feedback from you, we will be closing this ticket for now. If you encounter any new problems or have additional concerns, please don't hesitate to create a new ticket. Thank you!";
+                                // $subject = 'ISS Service Request - Ticket #' . $ticket_data->id . ": CLOSED : " . $ticket_data->subject;
                             }
 
 							$email_content1 = $log_description;
@@ -800,9 +858,16 @@ class TicketController extends Controller
 									'email_content5' => $email_content5,
 								],
 								function($message) use($to, $cc, $ticket_data, $subject){
-									$message->to($to)->cc($cc)->subject($subject);
+									$message->to($to)->cc($cc)->bcc('servicerequest@pricon.ph')->subject($subject);
 								}
 							);
+
+                            // if (Mail::failures()) {
+                            //     return response()->json(['qwert' => 0]);
+                            // }
+                            // else{
+                            //     return response()->json(['qwerty' => 1]);
+                            // }
 
                             TicketLog::insert([
                                 'ticket_id' => $request->ticket_id,
@@ -816,11 +881,12 @@ class TicketController extends Controller
                             ]);
 
                             DB::commit();
-		                    return response()->json(['auth' => 1, 'result' => 1, 'error']);
+		                    // return response()->json(['auth' => 1, 'result' => 1, 'error']);
+		                    return response()->json(['auth' => 1, 'result' => 1]);
 		                }
 		                catch (Exception $e) {
                             DB::rollback();
-		                    return response()->json(['auth' => 1, 'ticket_info' => null]);
+		                    return response()->json(['auth' => 1, 'ticket_info' => null, 'test_error' => $e->getMessage()]);
 		                }
 		            }
 		            else{
@@ -1446,7 +1512,8 @@ class TicketController extends Controller
                     }
 
 		            $response[] = array(
-		                "id" => $phone_dir->pkid,
+		                // "id" => $phone_dir->pkid,
+		                "id" => $phone_dir->phone_number,
 		                "text" => $text,
 		            );
 		        }

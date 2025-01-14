@@ -45,10 +45,11 @@
                             <span class="input-group-text w-100">Status</span>
                           </div>
                           <select class="form-control form-control-sm selFilByStat" name="status">
-                            <option value="1" selected="true">Open</option>
+                            <option value="0" selected="true">All</option>
+                            <option value="1">Open</option>
                             <option value="2">In Progress</option>
                             <option value="3">For Verification</option>
-                            <option value="4">Confirmed</option>
+                            <option value="4">Closed</option>
                             <option value="5">Cancelled</option>
                           </select>
                         </div>
@@ -71,7 +72,8 @@
                           <th>Created At <br>Assigned At <br>Due Date <br>Completed At</th>
                           <th>Subject <br><br>Attachment</th>
                           <th>Request</th>
-                          <th>Local #</th>
+                          {{-- <th>Local #</th> --}}
+                          <th>Assigned IT Specialist</th>
                           <th>CC</th>
                           <th>Action</th>
                         </tr>
@@ -157,6 +159,17 @@
               <label class="col-sm-2 col-form-label">Local Number</label>
               <div class="col-sm-6">
                 <select class="form-control select2bs4 selectLocalNo" name="local_no"></select>
+              </div>
+            </div>
+
+            <div class="form-group row">
+              <label class="col-sm-2 col-form-label">Factory</label>
+              <div class="col-sm-6">
+                <select class="form-control" name="factory" autocomplete="off" required>
+                    <option value="0">--Select--</option>
+                    <option value="1">Factory 1&2</option>
+                    <option value="3">Factory 3</option>
+                </select>
               </div>
             </div>
 
@@ -341,8 +354,9 @@
         { "data" : "raw_created_at" },
         { "data" : "raw_subject" },
         { "data" : "request" },
-        { "data" : "local_no" },
+        { "data" : "raw_assignee" },
         { "data" : "raw_cc" },
+        // { "data" : "raw_fac" }, // 01132025 by Nessa
         { "data" : "raw_action", orderable:false, searchable:false }
       ],
 

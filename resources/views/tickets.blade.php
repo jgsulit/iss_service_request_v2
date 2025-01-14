@@ -49,7 +49,8 @@
                             <option value="1">Open</option>
                             <option value="2">In Progress</option>
                             <option value="3">For Verification</option>
-                            <option value="4">Confirmed</option>
+                            {{-- <option value="4">Confirmed</option> --}}
+                            <option value="4">Closed</option>
                             <option value="5">Cancelled</option>
                           </select>
                         </div>
@@ -90,6 +91,7 @@
                           <th>Service Type</th>
                           <th>Local #</th>
                           <th>CC</th>
+                          <th>Factory</th>
                           <th>Action</th>
                         </tr>
                       </thead>
@@ -610,6 +612,7 @@
         { "data" : "raw_description" },
         { "data" : "local_no" },
         { "data" : "raw_cc" },
+        { "data" : "raw_fac" },
         { "data" : "raw_action", orderable:false, searchable:false }
       ],
 
@@ -825,8 +828,12 @@
 
     $("#tblTickets").on('click', '.btnAssignTicket', function(e){
       let ticketId = $(this).attr('ticket-id');
+      let subject = $(this).attr('subject');
+      let request = $(this).attr('requestDetails');
       $('input[name="ticket_id"]', frmAssignTicket).val(ticketId);
       $('input[name="show_ticket_id"]', frmAssignTicket).val("#" + ticketId);
+      $('input[name="subject_"]', frmAssignTicket).val(subject);
+      $('input[name="request_details_"]', frmAssignTicket).val(request);
       $("#mdlAssignTicket").modal('show');
     });
 
